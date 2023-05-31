@@ -1,6 +1,7 @@
 #include <Arduino.h>
 #include <ESP8266WiFi.h>
 #include <PubSubClient.h>
+#include <ArduinoJson.h>
 
 #include "secrets.h"
 
@@ -14,12 +15,16 @@ const int DOOR_CLOSED_SENSOR = 4;
 // Const Definitions
 const char* PUB_TOPIC = "chateau-sadler/chicken-coop/door-status";
 
-// Variable Definitions
-String doorState = "other";
+// Variable Declarations
+String doorState;
 
 // Function Declarations
 void connectToWifi();
 void connectToBroker();
+
+// JSON setup
+const int size = JSON_OBJECT_SIZE(3);
+StaticJsonDocument<size> doc;
 
 void setup() {
   Serial.begin(115200);
@@ -41,14 +46,20 @@ void loop() {;
 
   if (digitalRead(DOOR_OPEN_SENSOR) == 0) {
     doorState = "open";
+    digitalWrite(LED_BUILTIN, LOW);
   } else if (digitalRead(DOOR_CLOSED_SENSOR) == 0) {
     doorState = "closed";
+    digitalWrite(LED_BUILTIN, LOW);
   } else {
     doorState = "other";
+    digitalWrite(LED_BUILTIN, HIGH);
   }
 
-  client.publish(PUB_TOPIC, doorState.c_str());
-  Serial.println(doorState);
+  doc["door-state"] = doorState.c_str();
+
+  char buffer[256];
+  serializeJson(doc, buffer);
+  client.publish(PUB_TOPIC, buffer);
   delay(2500);
 }
 
