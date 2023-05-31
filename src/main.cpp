@@ -7,25 +7,60 @@
 WiFiClient wifiClient;
 PubSubClient client(wifiClient);
 
+// Pin Definitions
+const int DOOR_OPEN_SENSOR = 5;
+const int DOOR_CLOSED_SENSOR = 4;
 
+// Const Definitions
+const char* PUB_TOPIC = "chateau-sadler/chicken-coop/door-status";
 
-// put function declarations here:
+// Variable Definitions
+String doorState = "other";
+
+// Function Declarations
 void connectToWifi();
 void connectToBroker();
 
 void setup() {
   Serial.begin(115200);
+
+  pinMode(DOOR_OPEN_SENSOR, INPUT_PULLUP);
+  pinMode(DOOR_CLOSED_SENSOR, INPUT_PULLUP);
+  pinMode(LED_BUILTIN, OUTPUT);
+
   connectToWifi();
   connectToBroker();
 }
 
-void loop() {
-  // put your main code here, to run repeatedly:
+void loop() {;
+  // Read which door sensor is currently active
+  // and set the doorState var to 'open', 'closed', or
+  // 'other'
+
+  // TODO: Implement 'opening' and 'closing' instead of 'other'
+
+  if (digitalRead(DOOR_OPEN_SENSOR) == 0) {
+    doorState = "open";
+  } else if (digitalRead(DOOR_CLOSED_SENSOR) == 0) {
+    doorState = "closed";
+  } else {
+    doorState = "other";
+  }
+
+  client.publish(PUB_TOPIC, doorState.c_str());
+  Serial.println(doorState);
+  delay(2500);
 }
 
-/*
- * Function to Connect to to WiFi
- */
+/* *****************************************
+ *
+ * Function Definitions
+ * 
+ * 
+ * *************************************** */
+
+// Connect to Wifi
+
 void connectToWifi() {
   Serial.println();
   Serial.println();
@@ -44,9 +79,8 @@ void connectToWifi() {
   Serial.println(WiFi.localIP());
 }
 
-/*
- * Connect to MQTT
- */
+// Connect to Broker
+
 void connectToBroker() {
   client.setServer("192.168.1.113", 1883);
   Serial.print("Connecting to MQTT Broker");
@@ -56,5 +90,5 @@ void connectToBroker() {
   } 
   Serial.println();
   Serial.println("Connected to MQTT Broker");
-  client.publish("chateau-sadler/chicken-coop/door-status", "connected!");
+  client.publish(PUB_TOPIC, "connected!");
 }
