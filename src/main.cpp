@@ -8,11 +8,14 @@
 WiFiClient wifiClient;
 PubSubClient client(wifiClient);
 
-// Pin Definitions
+/* *****************************************
+ * Pin Definitions
+ *  
+ * *************************************** */
 const int DOOR_OPEN_SENSOR = 12;
 const int DOOR_CLOSED_SENSOR = 13;
-const int MOTOR_CW = 5;
-const int MOTOR_CCW = 4;
+const int MOTOR_OPEN = 5;
+const int MOTOR_CLOSE = 4;
 
 /* *****************************************
  * Topic Definitions
@@ -28,18 +31,53 @@ const char* CON_TOPIC = "chateau-sadler/chicken-coop/connected";
 // Subscribe door control
 char* SUB_TOPIC = "chateau-sadler/chicken-coop/door-control";
 
-// Variable Declarations
+/* *****************************************
+ * Variable Declarations
+ *  
+ * *************************************** */
 String doorState;
 bool subscribed = false;
 
-// Function Declarations
+// Door Open Sensor
+int doorOpenSensorVal;
+int doorOpenSensorVal2;
+int doorOpenSensorState;
+
+// Door Close Sensor
+int doorCloseSensorVal;
+int doorCloseSensorVal2;
+int doorCloseSensorState;
+
+bool motorRunning = false;
+
+// debounce delay
+unsigned long lastDebounceTime = 0;
+unsigned long debounceDelay = 100;
+
+// command received state
+bool cmd = false;
+// char* open = "open";
+// char* close = "close";
+
+/* *****************************************
+ * Function Definitions
+ *  
+ * *************************************** */
 void connectToWifi();
 void connectToBroker();
 void callback(char*, byte*, unsigned int);
+void stopDoorMotor();
 void openDoor();
 void closeDoor();
 
-// JSON setup
+// debounce door sensors
+void debounceDoorOpenSensor();
+void debounceDoorCloseSensor();
+
+/* *****************************************
+ * JSON Setup
+ *  
+ * *************************************** */
 const int capacity = JSON_OBJECT_SIZE(3);
 StaticJsonDocument<capacity> status;
 StaticJsonDocument<capacity> command;
@@ -49,8 +87,10 @@ void setup() {
 
   pinMode(DOOR_OPEN_SENSOR, INPUT_PULLUP);
   pinMode(DOOR_CLOSED_SENSOR, INPUT_PULLUP);
-  pinMode(MOTOR_CW, OUTPUT);
-  pinMode(MOTOR_CCW, OUTPUT);
+  pinMode(MOTOR_OPEN, OUTPUT);
+  digitalWrite(MOTOR_OPEN, LOW);
+  pinMode(MOTOR_CLOSE, OUTPUT);
+  digitalWrite(MOTOR_OPEN, LOW);
   pinMode(LED_BUILTIN, OUTPUT);
 
   connectToWifi();
@@ -62,16 +102,18 @@ void setup() {
 
 void loop() {
   client.loop();
+
+  debounceDoorOpenSensor();
+  debounceDoorCloseSensor();
+
   // Read which door sensor is currently active
   // and set the doorState var to 'open', 'closed', or
   // 'other'
 
-  // TODO: Implement 'opening' and 'closing' instead of 'other'
-
-  if (digitalRead(DOOR_OPEN_SENSOR) == 0) {
+  if (doorOpenSensorState == 0) {
     doorState = "open";
     digitalWrite(LED_BUILTIN, LOW);
-  } else if (digitalRead(DOOR_CLOSED_SENSOR) == 0) {
+  } else if (doorCloseSensorState == 0) {
     doorState = "closed";
     digitalWrite(LED_BUILTIN, LOW);
   } else {
@@ -84,34 +126,59 @@ void loop() {
   char buffer[256];
   serializeJson(status, buffer);
   client.publish(PUB_TOPIC, buffer);
-  delay(100);
 
-  // openDoor();
-  // delay(1000);
-  // closeDoor();
-  // delay(1000);
+  if (cmd) {
+    /*
+     * When a command is received via MQTT, check to see if
+     * the door sensor is in the "open" position, then check
+     * to see if the motor is running. If it is, the doorOpen
+     * sequence has already started and the door is now open,
+     * so stop the motor.
+     * 
+     * If the motor isn't running, then the door is already
+     * open the the closeDoor sequence should begin.
+     */
+    if (doorState == "open") {
+      if (motorRunning) {
+        stopDoorMotor();
+        cmd = false;
+      } else {
+        closeDoor();
+        delay(2000);
+        doorState = "other";
+      }
+      
+    }
+      
+    /*
+     * When a command is received via MQTT, check to see if
+     * the door sensor is in the "closed" position, then check
+     * to see if the motor is running. If it is, the doorClose
+     * sequence has already started and the door is now closed,
+     * so stop the motor.
+     * 
+     * If the motor isn't running, then the door is already
+     * closed the the openDoor sequence should begin.
+     */
+    if (doorState == "closed") {
+      if (motorRunning) {
+        stopDoorMotor();
+        cmd = false;
+      } else {
+        openDoor();
+        delay(2000);
+        doorState = "other";
+      }
+    }
+  }
 }
 
 
 
 /* *****************************************
- *
  * Function Definitions
  * 
- * 
  * *************************************** */
-
-// Door controls
-
-void openDoor() {
-  digitalWrite(MOTOR_CW, HIGH);
-  digitalWrite(MOTOR_CCW, LOW);
-}
-
-void closeDoor() {
-  digitalWrite(MOTOR_CCW, HIGH);
-  digitalWrite(MOTOR_CW, LOW);
-}
 
 // Connect to Wifi
 
@@ -151,11 +218,58 @@ void connectToBroker() {
 // Callback
 
 void callback(char* topic, byte* payload, unsigned int length) {
-  deserializeJson(command, payload);
+  cmd = true;
+}
 
-  if (command["cmd"] == "open") {
-    openDoor();
-  } else if (command["cmd"] == "close") {
-    closeDoor();
+// Debounce door sensors
+void debounceDoorOpenSensor() {
+  doorOpenSensorVal = digitalRead(DOOR_OPEN_SENSOR); // read value and store it in val
+
+  if ((unsigned long)(millis() - lastDebounceTime) > debounceDelay) { // delay 10ms for consistent readings
+    doorOpenSensorVal2 = digitalRead(DOOR_OPEN_SENSOR);               // read input value again to check or bounce
+
+    if (doorOpenSensorVal == doorOpenSensorVal2) {                      // make sure we have 2 consistent readings
+      if(doorOpenSensorVal != doorOpenSensorState) {                    // sensor state has changed
+        doorOpenSensorState = doorOpenSensorVal;
+      }
+    }
+
   }
+}
+
+void debounceDoorCloseSensor() {
+  doorCloseSensorVal = digitalRead(DOOR_CLOSED_SENSOR);
+
+  if ((unsigned long)(millis() - lastDebounceTime) > debounceDelay) {
+    doorCloseSensorVal2 = digitalRead(DOOR_CLOSED_SENSOR);
+
+    if (doorCloseSensorVal == doorCloseSensorVal2) {
+      if(doorCloseSensorVal != doorCloseSensorState) {
+        doorCloseSensorState = doorCloseSensorVal;
+      }
+    }
+
+  }
+}
+
+// Stop Door Motor
+void stopDoorMotor() {
+  digitalWrite(MOTOR_OPEN, LOW);
+  digitalWrite(MOTOR_CLOSE, LOW);
+  motorRunning = false;
+}
+
+
+// Open Door
+void openDoor() {
+  digitalWrite(MOTOR_OPEN, HIGH);
+  digitalWrite(MOTOR_CLOSE, LOW);
+  motorRunning = true;
+}
+
+// Close Door
+void closeDoor() {
+  digitalWrite(MOTOR_OPEN, LOW);
+  digitalWrite(MOTOR_CLOSE, HIGH);
+  motorRunning = true;
 }
