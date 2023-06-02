@@ -18,8 +18,6 @@ void setup()
 
   connectToWifi(SECRET_SSID, SECRET_PASS);
   connectToBroker(client, SECRET_MQTT_USER, SECRET_MQTT_PASS);
-
-  Serial.println(door.getState());
 }
 
 void loop()
