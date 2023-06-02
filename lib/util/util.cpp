@@ -20,9 +20,20 @@ void connectToWifi(const char *ssid, const char *pass)
     Serial.println(WiFi.localIP());
 }
 
-void connectToBroker(PubSubClient client, const char *user, const char *pass)
-{
-    client.setServer("192.168.1.104", 1883);
-    client.connect("door-controller", user, pass);
-    Serial.println("Connected to MQTT Broker");
-}
+// PubSubClient connectToBroker()
+// {
+//     WiFiClient wifiClient;
+//     PubSubClient client(wifiClient);
+
+//     client.setServer("192.168.1.104", 1883);
+//     if (client.connect("door-controller", "mqtt-client", "password"))
+//     {
+//         Serial.println("Connected to MQTT Broker");
+//     }
+//     else
+//     {
+//         Serial.println("Not connected to Broker.");
+//     }
+
+//     return client;
+// }

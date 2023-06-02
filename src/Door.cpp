@@ -36,15 +36,15 @@ bool Door::checkStateChange()
 
     if (_sensorOpenDebouncer.changed() || _sensorCloseDebouncer.changed())
     {
-        if (_sensorOpenDebouncer.read() == 0)
+        if (_sensorOpenDebouncer.read() == 0) // open sensor is active
         {
             _doorState = "open";
         }
-        else if (_sensorCloseDebouncer.read() == 0)
+        else if (_sensorCloseDebouncer.read() == 0) // closed sensor is active
         {
             _doorState = "closed";
         }
-        else
+        else // neither sensor is active
         {
             _doorState = "other";
         }

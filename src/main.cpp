@@ -12,18 +12,34 @@ PubSubClient client(wifiClient);
 
 Door door(5, 4, 12, 13);
 
+const char *pubTopic = "chateau-sadler/chicken-coop/door/status";
+const char *testMsg = "test";
+
 void setup()
 {
   Serial.begin(115200);
 
   connectToWifi(SECRET_SSID, SECRET_PASS);
-  connectToBroker(client, SECRET_MQTT_USER, SECRET_MQTT_PASS);
+  client.setServer("192.168.1.104", 1883);
+  if (client.connect("door-controller", "mqtt-client", "password"))
+  {
+    Serial.println("Connected to broker");
+  }
 }
 
 void loop()
 {
+  client.loop();
   if (door.checkStateChange())
   {
+    if (client.publish(pubTopic, door.getState()))
+    {
+      Serial.println("published");
+    }
+    else
+    {
+      Serial.println("error");
+    }
     Serial.println(door.getState());
   };
 }
