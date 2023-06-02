@@ -18,6 +18,11 @@ Door::Door(int motorOpenPin, int motorClosePin, int sensorOpenPin, int sensorClo
     _sensorClosePin = sensorClosePin;
 }
 
+const char *Door::getState()
+{
+    return _doorState;
+}
+
 void Door::open()
 {
     digitalWrite(_motorOpenPin, HIGH);
