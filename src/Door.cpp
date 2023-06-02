@@ -11,16 +11,46 @@ Door::Door(int motorOpenPin, int motorClosePin, int sensorOpenPin, int sensorClo
     digitalWrite(motorClosePin, LOW);
     _motorClosePin = motorClosePin;
 
-    pinMode(sensorOpenPin, INPUT_PULLUP);
+    // pinMode(sensorOpenPin, INPUT_PULLUP);
+    _sensorOpenDebouncer.attach(sensorOpenPin, INPUT_PULLUP);
+    _sensorOpenDebouncer.interval(25);
     _sensorOpenPin = sensorOpenPin;
 
-    pinMode(sensorClosePin, INPUT_PULLUP);
+    // pinMode(sensorClosePin, INPUT_PULLUP);
+    _sensorCloseDebouncer.attach(sensorClosePin, INPUT_PULLUP);
+    _sensorCloseDebouncer.interval(25);
     _sensorClosePin = sensorClosePin;
 }
 
 const char *Door::getState()
 {
     return _doorState;
+}
+
+bool Door::checkStateChange()
+{
+    // Debounce bother open and closed sensors. If either sensor value changes,
+    // set the door state and return true. Otherwise, return false.
+    _sensorOpenDebouncer.update();
+    _sensorCloseDebouncer.update();
+
+    if (_sensorOpenDebouncer.changed() || _sensorCloseDebouncer.changed())
+    {
+        if (_sensorOpenDebouncer.read() == 0)
+        {
+            _doorState = "open";
+        }
+        else if (_sensorCloseDebouncer.read() == 0)
+        {
+            _doorState = "closed";
+        }
+        else
+        {
+            _doorState = "other";
+        }
+        return true;
+    }
+    return false;
 }
 
 void Door::open()

@@ -22,10 +22,10 @@ void setup()
 
 void loop()
 {
-  door.open();
-  delay(1000);
-  door.close();
-  delay(1000);
+  if (door.checkStateChange())
+  {
+    Serial.println(door.getState());
+  };
 }
 
 // /* *****************************************
