@@ -1,6 +1,7 @@
 #include <Arduino.h>
 #include <ESP8266WiFi.h>
 #include <PubSubClient.h>
+#include <ArduinoJson.h>
 
 #include <secrets.h>
 
@@ -13,23 +14,57 @@ PubSubClient client(wifiClient);
 Door door(5, 4, 12, 13);
 
 const char *pubTopic = "chateau-sadler/chicken-coop/door/status";
+const char *subTopic = "chateau-sadler/chicken-coop/door/control";
 const char *testMsg = "test";
+
+// callback function
+
+void callback(char *topic, byte *payload, unsigned int length)
+{
+  StaticJsonDocument<256> doc;
+  deserializeJson(doc, payload, length);
+  char cmd[6];
+  strlcpy(cmd, doc["cmd"] | "default", sizeof(cmd));
+  Serial.println(cmd);
+}
+
+/** ***********************************************************
+ *
+ *
+ * Setup
+ *
+ *
+ *
+ * ************************************************************ */
 
 void setup()
 {
   Serial.begin(115200);
 
   connectToWifi(SECRET_SSID, SECRET_PASS);
+
   client.setServer("192.168.1.104", 1883);
   if (client.connect("door-controller", "mqtt-client", "password"))
   {
     Serial.println("Connected to broker");
   }
+  client.subscribe(subTopic);
+  client.setCallback(callback);
 }
+
+/** ***********************************************************
+ *
+ *
+ * Loop
+ *
+ *
+ *
+ * ************************************************************ */
 
 void loop()
 {
   client.loop();
+
   if (door.checkStateChange())
   {
     if (client.publish(pubTopic, door.getState()))
