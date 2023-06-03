@@ -40,23 +40,14 @@ bool Door::checkStateChange()
         if (_sensorOpenDebouncer.read() == 0) // open sensor is active
         {
             _doorState = "open";
-            Serial.println("state changed");
-            Serial.print("Door State: ");
-            Serial.println(_doorState);
         }
         else if (_sensorCloseDebouncer.read() == 0) // closed sensor is active
         {
             _doorState = "close";
-            Serial.println("state changed");
-            Serial.print("Door State: ");
-            Serial.println(_doorState);
         }
         else // neither sensor is active
         {
             _doorState = "other";
-            Serial.println("state changed");
-            Serial.print("Door State: ");
-            Serial.println(_doorState);
         }
         return true;
     }
@@ -82,17 +73,11 @@ void Door::control(char cmd[6])
     }
     else if (!strcmp(cmd, "open"))
     {
-        // start motor running in open direction.
-        Serial.println("Door Opening...");
         _open();
-        // stop motor running when doorState changes to "closed"
     }
     else if (!strcmp(cmd, "close"))
     {
-        // start motor running in close direction.
-        Serial.println("Door Closing...");
         _close();
-        // stop motor running when doorState changes to "open"
     }
 }
 
