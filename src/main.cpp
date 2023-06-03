@@ -17,16 +17,18 @@ const char *pubTopic = "chateau-sadler/chicken-coop/door/status";
 const char *subTopic = "chateau-sadler/chicken-coop/door/control";
 const char *testMsg = "test";
 
+char command[8]; // Global command variable keeps track of current opperation while in loop.
+
 // callback function
 
 void callback(char *topic, byte *payload, unsigned int length)
 {
-  StaticJsonDocument<256> doc;
-  deserializeJson(doc, payload, length);
-  char cmd[6];
-  strlcpy(cmd, doc["cmd"] | "default", sizeof(cmd));
-
-  door.control(cmd);
+  StaticJsonDocument<256> doc;                       // Create JSON doc
+  deserializeJson(doc, payload, length);             // deserialize JSON into doc
+  char cmd[6];                                       // define empty string cmd
+  strlcpy(cmd, doc["cmd"] | "default", sizeof(cmd)); // Copy value of doc["cmd"]
+  strcpy(command, cmd);                              // Copy value of cmd into global command
+  door.control(cmd);                                 // Send command to the door
 }
 
 /** ***********************************************************
@@ -51,6 +53,8 @@ void setup()
   }
   client.subscribe(subTopic);
   client.setCallback(callback);
+
+  door.checkStateChange();
 }
 
 /** ***********************************************************
@@ -66,18 +70,12 @@ void loop()
 {
   client.loop();
 
+  //  BACKUP ////////////
   if (door.checkStateChange())
   {
-    if (client.publish(pubTopic, door.getState()))
-    {
-      Serial.println("published");
-    }
-    else
-    {
-      Serial.println("error");
-    }
-    Serial.println(door.getState());
+    client.publish(pubTopic, door.getState());
   };
+  // /BACKUP ////////////
 }
 
 // /* *****************************************

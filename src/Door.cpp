@@ -40,14 +40,23 @@ bool Door::checkStateChange()
         if (_sensorOpenDebouncer.read() == 0) // open sensor is active
         {
             _doorState = "open";
+            Serial.println("state changed");
+            Serial.print("Door State: ");
+            Serial.println(_doorState);
         }
         else if (_sensorCloseDebouncer.read() == 0) // closed sensor is active
         {
-            _doorState = "closed";
+            _doorState = "close";
+            Serial.println("state changed");
+            Serial.print("Door State: ");
+            Serial.println(_doorState);
         }
         else // neither sensor is active
         {
             _doorState = "other";
+            Serial.println("state changed");
+            Serial.print("Door State: ");
+            Serial.println(_doorState);
         }
         return true;
     }
@@ -73,47 +82,60 @@ void Door::control(char cmd[6])
     }
     else if (!strcmp(cmd, "open"))
     {
-        Serial.println(cmd);
         // start motor running in open direction.
         Serial.println("Door Opening...");
+        _open();
         // stop motor running when doorState changes to "closed"
     }
     else if (!strcmp(cmd, "close"))
     {
-        Serial.println(cmd);
         // start motor running in close direction.
         Serial.println("Door Closing...");
+        _close();
         // stop motor running when doorState changes to "open"
     }
-
-    // while (this->_doorState != "closed")
-    // {
-    //     if (checkStateChange())
-    //     {
-    //         this->_stopMotor();
-    //         break;
-    //     }
-    //     delay(500);
-    // }
 }
 
 void Door::_stopMotor()
 {
-    Serial.println("_stopMotor() called");
     digitalWrite(_motorOpenPin, LOW);
     digitalWrite(_motorClosePin, LOW);
 }
 
 void Door::_open()
 {
-    Serial.println("_open() called");
     digitalWrite(_motorOpenPin, HIGH);
     digitalWrite(_motorClosePin, LOW);
+
+    while (true) // Door is not yet open
+    {
+        delay(50); // MCU crashes without this delay in the loop
+
+        _sensorOpenDebouncer.update();
+        if (_sensorOpenDebouncer.changed()) // Now door is open
+        {
+            _stopMotor();
+            break;
+        }
+        continue;
+    }
 }
 
 void Door::_close()
 {
-    Serial.println("_close() called");
     digitalWrite(_motorOpenPin, LOW);
     digitalWrite(_motorClosePin, HIGH);
+
+    while (true) // Door is not yet open
+    {
+        delay(50); // MCU crashes without this delay in the loop
+
+        _sensorCloseDebouncer.update();
+        if (_sensorCloseDebouncer.changed()) // Now door is open
+        {
+            _stopMotor();
+            break;
+        }
+        continue;
+    }
 }

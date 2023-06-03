@@ -21,6 +21,10 @@ private:
     int _sensorOpenPin;
     int _sensorClosePin;
 
+    // Sensor vals
+    int _sensorOpenVal;
+    int _sensorCloseVal;
+
     // Debouncer
     Bounce _sensorOpenDebouncer;
     Bounce _sensorCloseDebouncer;
