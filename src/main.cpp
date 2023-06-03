@@ -25,7 +25,8 @@ void callback(char *topic, byte *payload, unsigned int length)
   deserializeJson(doc, payload, length);
   char cmd[6];
   strlcpy(cmd, doc["cmd"] | "default", sizeof(cmd));
-  Serial.println(cmd);
+
+  door.control(cmd);
 }
 
 /** ***********************************************************

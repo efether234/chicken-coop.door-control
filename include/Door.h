@@ -10,8 +10,7 @@ public:
     Door(int motorOpenPin, int motorClosePin, int sensorOpenPin, int sensorClosePin);
     const char *getState();
     bool checkStateChange();
-    void open();
-    void close();
+    void control(char cmd[6]);
 
 private:
     // Motor control pins
@@ -27,5 +26,9 @@ private:
     Bounce _sensorCloseDebouncer;
 
     const char *_doorState = "other";
+
+    void _stopMotor();
+    void _open();
+    void _close();
 };
 #endif
