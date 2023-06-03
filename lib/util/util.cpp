@@ -2,11 +2,18 @@
 
 void connectToWifi(const char *ssid, const char *pass)
 {
+    IPAddress local_IP(192, 168, 1, 108);
+    IPAddress gateway(192, 168, 1, 1);
+    IPAddress subnet(255, 255, 255, 0);
     Serial.println();
     Serial.println();
     Serial.print("Connecting to WiFi network ");
     Serial.print(ssid);
 
+    if (!WiFi.config(local_IP, gateway, subnet))
+    {
+        Serial.println("STA failed to configure");
+    }
     WiFi.begin(ssid, pass);
 
     while (WiFi.status() != WL_CONNECTED)
@@ -19,21 +26,3 @@ void connectToWifi(const char *ssid, const char *pass)
     Serial.print("Local IP: ");
     Serial.println(WiFi.localIP());
 }
-
-// PubSubClient connectToBroker()
-// {
-//     WiFiClient wifiClient;
-//     PubSubClient client(wifiClient);
-
-//     client.setServer("192.168.1.104", 1883);
-//     if (client.connect("door-controller", "mqtt-client", "password"))
-//     {
-//         Serial.println("Connected to MQTT Broker");
-//     }
-//     else
-//     {
-//         Serial.println("Not connected to Broker.");
-//     }
-
-//     return client;
-// }

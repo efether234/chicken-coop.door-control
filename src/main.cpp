@@ -1,5 +1,8 @@
 #include <Arduino.h>
 #include <ESP8266WiFi.h>
+#include <ESPAsyncTCP.h>
+#include <ESPAsyncWebServer.h>
+#include <AsyncElegantOTA.h>
 #include <PubSubClient.h>
 #include <ArduinoJson.h>
 
@@ -11,7 +14,7 @@
 WiFiClient wifiClient;
 PubSubClient client(wifiClient);
 
-Door door(5, 4, 12, 13);
+Door door(5, 4, 12, 13); // mOpen mClose sOpen sClose
 
 const char *pubTopic = "chateau-sadler/chicken-coop/door/status";
 const char *subTopic = "chateau-sadler/chicken-coop/door/control";
@@ -27,6 +30,8 @@ void callback(char *topic, byte *payload, unsigned int length)
   door.control(cmd);                                 // Send command to the door
 }
 
+AsyncWebServer server(80);
+
 /** ***********************************************************
  *
  *
@@ -40,7 +45,11 @@ void setup()
 {
   Serial.begin(115200);
 
+  // Connect to Wifi
   connectToWifi(SECRET_SSID, SECRET_PASS);
+
+  AsyncElegantOTA.begin(&server);
+  server.begin();
 
   client.setServer("192.168.1.104", 1883);
   if (client.connect("door-controller", "mqtt-client", "password", pubTopic, 0, true, door.getState()))

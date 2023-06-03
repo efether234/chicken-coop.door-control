@@ -6,6 +6,5 @@
 #include <PubSubClient.h>
 
 void connectToWifi(const char *ssid, const char *pass);
-// PubSubClient connectToBroker();
 
 #endif
