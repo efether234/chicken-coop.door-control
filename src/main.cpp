@@ -14,7 +14,7 @@
 WiFiClient wifiClient;
 PubSubClient client(wifiClient);
 
-Door door(5, 4, 12, 13); // mOpen mClose sOpen sClose
+Door door(5, 0, 14, 13); // mOpen mClose sOpen sClose
 
 const char *pubTopic = "chateau-sadler/chicken-coop/door/status";
 const char *subTopic = "chateau-sadler/chicken-coop/door/control";
