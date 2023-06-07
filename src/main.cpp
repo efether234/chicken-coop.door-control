@@ -77,6 +77,6 @@ void loop()
 
   if (door.checkStateChange())
   {
-    client.publish(pubTopic, door.getState());
+    client.publish(pubTopic, door.getState(), true);
   };
 }

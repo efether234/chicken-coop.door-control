@@ -6,3 +6,5 @@
 
 /src/secrets.h
 /include/secrets.h
+
+.DS_Store

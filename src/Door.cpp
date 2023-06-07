@@ -118,6 +118,7 @@ void Door::_close()
         _sensorCloseDebouncer.update();
         if (_sensorCloseDebouncer.changed()) // Now door is open
         {
+            delay(50);
             _stopMotor();
             break;
         }
