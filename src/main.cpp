@@ -14,10 +14,10 @@
 WiFiClient wifiClient;
 PubSubClient client(wifiClient);
 
-Door door(5, 0, 14, 13); // mOpen mClose sOpen sClose
+Door door(5, 0, 14, 13); // mOpen-D1 mClose-D3 sOpen-D5 Close-D7
 
-const char *pubTopic = "chateau-sadler/chicken-coop/door/status";
-const char *subTopic = "chateau-sadler/chicken-coop/door/control";
+const char *pubTopic = "test/chicken-coop/door/status";
+const char *subTopic = "test/chicken-coop/door/control";
 
 // callback function
 
