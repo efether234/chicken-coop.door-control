@@ -16,6 +16,7 @@ PubSubClient client(wifiClient);
 
 Door door(5, 0, 14, 13); // mOpen-D1 mClose-D3 sOpen-D5 Close-D7
 
+const char *availTopic = "test/chicken-coop/door/availability";
 const char *pubTopic = "test/chicken-coop/door/status";
 const char *subTopic = "test/chicken-coop/door/control";
 
@@ -52,9 +53,10 @@ void setup()
   server.begin();
 
   client.setServer("192.168.1.104", 1883);
-  if (client.connect("door-controller", "mqtt-client", "password", pubTopic, 0, true, door.getState()))
+  if (client.connect("door-controller", "mqtt-client", "password", availTopic, 0, true, "unavailable"))
   {
     Serial.println("Connected to broker");
+    client.publish(availTopic, "available", true);
   }
   client.subscribe(subTopic);
   client.setCallback(callback);
