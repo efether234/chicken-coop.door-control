@@ -84,34 +84,10 @@ void loop()
 
 void openDoor() {
   door.open();
-  while (true)
-  {
-    delay(50);
-    door._sensorOpenDebouncer.update();
-    if(door._sensorOpenDebouncer.changed())
-    {
-      door.stop();
-      // client.publish(pubTopic, "open");
-      break;
-    }
-    continue;
-  }
 }
 
 void closeDoor() {
   door.close();
-  while (true)
-  {
-    delay(50);
-    door._sensorCloseDebouncer.update();
-    if(door._sensorCloseDebouncer.changed())
-    {
-      door.stop();
-      // client.publish(pubTopic, "close");
-      break;
-    }
-    continue;
-  }
 }
 
 void callback(char *topic, byte *payload, unsigned int length)
@@ -119,10 +95,12 @@ void callback(char *topic, byte *payload, unsigned int length)
   if (!strncmp((char *)payload, "open", length))
   {
     openDoor();
+    client.publish(pubTopic, "opening");
   }
   if (!strncmp((char *)payload, "close", length))
   {
     closeDoor();
+    client.publish(pubTopic, "closing");
   }
   if (!strncmp((char *)payload, "stop", length))
   {
