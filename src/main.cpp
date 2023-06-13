@@ -10,6 +10,8 @@
 
 #include <util.h>
 #include <Door.h>
+void openDoor();
+void closeDoor();
 
 WiFiClient wifiClient;
 PubSubClient client(wifiClient);
@@ -23,11 +25,18 @@ const char *subTopic = "test/chicken-coop/door/control";
 
 void callback(char *topic, byte *payload, unsigned int length)
 {
-  StaticJsonDocument<256> doc;                       // Create JSON doc
-  deserializeJson(doc, payload, length);             // deserialize JSON into doc
-  char cmd[6];                                       // define empty string cmd
-  strlcpy(cmd, doc["cmd"] | "default", sizeof(cmd)); // Copy value of doc["cmd"]
-  door.control(cmd);                                 // Send command to the door
+  if (strncmp((char *)payload, "open", length))
+  {
+    openDoor();
+  }
+  if (strncmp((char *)payload, "close", length))
+  {
+    closeDoor();
+  }
+  if (strncmp((char *)payload, "close", length))
+  {
+    door.stop();
+  }
 }
 
 AsyncWebServer server(80);
@@ -79,4 +88,21 @@ void loop()
   {
     client.publish(pubTopic, door.getState(), true);
   };
+}
+
+/** ***********************************************************
+ *
+ *
+ * Function Definitions
+ *
+ *
+ *
+ * ************************************************************ */
+
+void openDoor() {
+  door.open();
+}
+
+void closeDoor() {
+  door.close();
 }
