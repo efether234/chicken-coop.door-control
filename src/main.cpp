@@ -14,6 +14,8 @@ void openDoor();
 void closeDoor();
 void callback(char *topic, byte *payload, unsigned int length);
 
+char *doorState;
+
 WiFiClient wifiClient;
 PubSubClient client(wifiClient);
 
@@ -44,7 +46,7 @@ void setup()
   server.begin();
 
   client.setServer("192.168.1.104", 1883);
-  if (client.connect("door-controller", "mqtt-client", "password", pubTopic, 0, true, door.getState()))
+  if (client.connect("door-controller", "mqtt-client", "password"))
   {
     Serial.println("Connected to broker");
   }
@@ -52,6 +54,7 @@ void setup()
   client.setCallback(callback);
 
   door.checkStateChange();
+  strcpy(doorState, door.getState());
 }
 
 /** ***********************************************************
@@ -69,7 +72,8 @@ void loop()
 
   if (door.checkStateChange())
   {
-    client.publish(pubTopic, door.getState(), true);
+    strcpy(doorState, door.getState());
+    client.publish(pubTopic, doorState), true);
   };
 }
 
@@ -95,12 +99,14 @@ void callback(char *topic, byte *payload, unsigned int length)
   if (!strncmp((char *)payload, "open", length))
   {
     openDoor();
-    client.publish(pubTopic, "opening");
+    strcpy(doorState, "opening");
+    client.publish(pubTopic, doorState);
   }
   if (!strncmp((char *)payload, "close", length))
   {
     closeDoor();
-    client.publish(pubTopic, "closing");
+    strcpy(doorState, "closing");
+    client.publish(pubTopic, doorState);
   }
   if (!strncmp((char *)payload, "stop", length))
   {
