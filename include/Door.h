@@ -9,6 +9,11 @@ class Door
 public:
     Door(int motorOpenPin, int motorClosePin, int sensorOpenPin, int sensorClosePin);
     const char *getState();
+
+    // Debouncer
+    Bounce _sensorOpenDebouncer;
+    Bounce _sensorCloseDebouncer;
+
     bool checkStateChange();
     void stop();
     void open();
@@ -27,9 +32,7 @@ private:
     int _sensorOpenVal;
     int _sensorCloseVal;
 
-    // Debouncer
-    Bounce _sensorOpenDebouncer;
-    Bounce _sensorCloseDebouncer;
+    
 
     const char *_doorState = "other";
 

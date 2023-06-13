@@ -12,6 +12,7 @@
 #include <Door.h>
 void openDoor();
 void closeDoor();
+void callback(char *topic, byte *payload, unsigned int length);
 
 WiFiClient wifiClient;
 PubSubClient client(wifiClient);
@@ -20,24 +21,6 @@ Door door(5, 0, 14, 13); // mOpen-D1 mClose-D3 sOpen-D5 Close-D7
 
 const char *pubTopic = "test/chicken-coop/door/status";
 const char *subTopic = "test/chicken-coop/door/control";
-
-// callback function
-
-void callback(char *topic, byte *payload, unsigned int length)
-{
-  if (strncmp((char *)payload, "open", length))
-  {
-    openDoor();
-  }
-  if (strncmp((char *)payload, "close", length))
-  {
-    closeDoor();
-  }
-  if (strncmp((char *)payload, "close", length))
-  {
-    door.stop();
-  }
-}
 
 AsyncWebServer server(80);
 
@@ -101,8 +84,48 @@ void loop()
 
 void openDoor() {
   door.open();
+  while (true)
+  {
+    delay(50);
+    door._sensorOpenDebouncer.update();
+    if(door._sensorOpenDebouncer.changed())
+    {
+      door.stop();
+      // client.publish(pubTopic, "open");
+      break;
+    }
+    continue;
+  }
 }
 
 void closeDoor() {
   door.close();
+  while (true)
+  {
+    delay(50);
+    door._sensorCloseDebouncer.update();
+    if(door._sensorCloseDebouncer.changed())
+    {
+      door.stop();
+      // client.publish(pubTopic, "close");
+      break;
+    }
+    continue;
+  }
+}
+
+void callback(char *topic, byte *payload, unsigned int length)
+{
+  if (!strncmp((char *)payload, "open", length))
+  {
+    openDoor();
+  }
+  if (!strncmp((char *)payload, "close", length))
+  {
+    closeDoor();
+  }
+  if (!strncmp((char *)payload, "stop", length))
+  {
+    door.stop();
+  }
 }
