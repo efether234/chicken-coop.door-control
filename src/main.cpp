@@ -16,9 +16,14 @@ PubSubClient client(wifiClient);
 
 Door door(5, 0, 14, 13); // mOpen-D1 mClose-D3 sOpen-D5 Close-D7
 
-const char *availTopic = "chateau-sadler/chicken-coop/door/availability";
-const char *pubTopic = "chateau-sadler/chicken-coop/door/status";
-const char *subTopic = "chateau-sadler/chicken-coop/door/control";
+const char *availTopic = "test/chicken-coop/door/availability";
+const char *pubTopic = "test/chicken-coop/door/status";
+const char *subTopic = "test/chicken-coop/door/control";
+
+const char *clientId = "door-controller";
+const char *clientUser = "mqtt-client";
+const char *clientPass = "password";
+const char *uavailMsg = "unavailable";
 
 // callback function
 
@@ -53,7 +58,7 @@ void setup()
   server.begin();
 
   client.setServer("192.168.1.104", 1883);
-  if (client.connect("door-controller", "mqtt-client", "password", availTopic, 0, true, "unavailable"))
+  if (client.connect(clientId, clientUser, clientPass, availTopic, 0, true, uavailMsg))
   {
     Serial.println("Connected to broker");
     client.publish(availTopic, "available", true);
@@ -75,10 +80,14 @@ void setup()
 
 void loop()
 {
-  client.loop();
-
+  if (!client.connected())
+  {
+    client.connect(clientId, clientUser, clientPass, availTopic, 0, true, uavailMsg);
+    delay(5000);
+  };
   if (door.checkStateChange())
   {
     client.publish(pubTopic, door.getState(), true);
   };
+  client.loop();
 }
