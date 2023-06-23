@@ -8,3 +8,5 @@
 /include/secrets.h
 
 .DS_Store
+
+/src/main.backup.cpp
