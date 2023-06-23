@@ -142,7 +142,7 @@ void close()
         }
         continue;
     }
-    doorState = "closed"
+    doorState = "closed";
 }
 
 void stop()
