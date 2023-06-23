@@ -3,12 +3,42 @@
 #include <ESPAsyncTCP.h>
 #include <ESPAsyncWebServer.h>
 #include <AsyncElegantOTA.h>
+#include <Bounce2.h>
+#include <string>
+using namespace std;
 
 #include <secrets.h>
 
-// Pin Definitions
+/*
+ * Pin Definitions
+ *
+ */
+
 int motorOpenPin = 5;
 int motorClosePin = 0;
+int sensorOpenPin = 14;
+int sensorClosePin = 13;
+
+/*
+ * Debouncer
+ *
+ */
+
+Bounce sensorOpenDebouncer;
+Bounce sensorCloseDebouncer;
+
+// Door State
+
+string doorState = "other"; // options: "open", "opening", "closed", "closing"
+
+/*
+ * Function Declarations
+ * 
+ */
+
+void open();
+void close();
+void stop();
 
 // WiFi Config
 IPAddress local_IP(192, 168, 1, 109);
@@ -25,6 +55,11 @@ void setup() {
     digitalWrite(motorOpenPin, LOW);
     pinMode(motorClosePin, OUTPUT);
     digitalWrite(motorClosePin, LOW);
+
+    sensorOpenDebouncer.attach(sensorOpenPin, INPUT_PULLUP);
+    sensorOpenDebouncer.interval(25);
+    sensorCloseDebouncer.attach(sensorClosePin, INPUT_PULLUP);
+    sensorCloseDebouncer.interval(25);
 
     Serial.begin(115200);
     Serial.println();
@@ -55,8 +90,63 @@ void setup() {
 }
 
 void loop() {
+    open();
+    delay(1000);
+    stop();
+    delay(1000);
+    close();
+    delay(1000);
+    stop();
+    delay(1000);
+}
+
+/*
+ * Function definitions
+ * 
+ */
+
+void open()
+{
+    doorState = "opening";
     digitalWrite(motorOpenPin, HIGH);
-    delay(100);
+    digitalWrite(motorClosePin, LOW);
+
+    while (true)
+    {
+        delay(50);
+        sensorOpenDebouncer.update();
+        if (sensorOpenDebouncer.changed())
+        {
+            stop();
+            break;
+        }
+        continue;
+    }
+    doorState = "open";
+}
+
+void close()
+{
+    doorState = "closing";
     digitalWrite(motorOpenPin, LOW);
-    delay(900);
+    digitalWrite(motorClosePin, HIGH);
+
+    while (true)
+    {
+        delay(50);
+        sensorCloseDebouncer.update();
+        if (sensorCloseDebouncer.changed())
+        {
+            stop();
+            break;
+        }
+        continue;
+    }
+    doorState = "closed"
+}
+
+void stop()
+{
+    digitalWrite(motorOpenPin, LOW);
+    digitalWrite(motorClosePin, LOW);
 }
