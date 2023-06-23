@@ -46,7 +46,7 @@ void stop();
  *
  */ 
 
-IPAddress local_IP(192, 168, 1, 109);
+IPAddress local_IP(192, 168, 1, 108);
 IPAddress gateway(192, 168, 1, 254);
 IPAddress subnet(255, 255, 255, 0);
 
@@ -57,9 +57,9 @@ WiFiClient wifiClient;
  * 
  */
 
-const char *availTopic = "test/chicken-coop/door/availability";
-const char *stateTopic = "test/chicken-coop/door/state";
-const char *ctrlTopic  = "test/chicken-coop/door/control";
+const char *availTopic = "chateau-sadler/chicken-coop/door/availability";
+const char *stateTopic = "chateau-sadler/chicken-coop/door/state";
+const char *ctrlTopic  = "chateau-sadler/chicken-coop/door/control";
 
 const char *broker     = "192.168.1.104";
 const int   port       = 1883;
