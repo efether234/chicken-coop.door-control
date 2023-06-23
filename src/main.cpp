@@ -4,8 +4,8 @@
 #include <ESPAsyncWebServer.h>
 #include <AsyncElegantOTA.h>
 #include <Bounce2.h>
+#include <PubSubClient.h>
 #include <string>
-using namespace std;
 
 #include <secrets.h>
 
@@ -29,23 +29,41 @@ Bounce sensorCloseDebouncer;
 
 // Door State
 
-string doorState = "other"; // options: "open", "opening", "closed", "closing"
+String doorState = "other"; // options: "open", "opening", "closed", "closing"
 
 /*
  * Function Declarations
  * 
  */
 
+void callback(char *topic, byte *payload, unsigned int length);
 void open();
 void close();
 void stop();
 
-// WiFi Config
+/*
+ * Wifi Config
+ *
+ */ 
+
 IPAddress local_IP(192, 168, 1, 109);
 IPAddress gateway(192, 168, 1, 254);
 IPAddress subnet(255, 255, 255, 0);
 
 WiFiClient wifiClient;
+
+/*
+ * MQTT Config
+ * 
+ */
+
+const char *availTopic = "test/chicken-coop/door/availability";
+const char *stateTopic = "test/chicken-coop/door/state";
+const char *ctrlTopic  = "test/chicken-coop/door/control";
+
+const char *broker     = "192.168.1.104";
+const int   port       = 1883;
+PubSubClient client(wifiClient);
 
 AsyncWebServer server(80);
 
@@ -87,17 +105,19 @@ void setup() {
 
     AsyncElegantOTA.begin(&server);
     server.begin();
+
+    client.setServer("192.168.1.104", 1883);
+    if (client.connect("chicken-door_06231333", SECRET_UN, SECRET_PW, availTopic, 0, true, "unavailable"))
+    {
+        Serial.println("Connected to broker");
+        client.publish(availTopic, "available");
+    }
+    client.subscribe(ctrlTopic);
+    client.setCallback(callback);
 }
 
 void loop() {
-    open();
-    delay(1000);
-    stop();
-    delay(1000);
-    close();
-    delay(1000);
-    stop();
-    delay(1000);
+    client.loop();
 }
 
 /*
@@ -105,9 +125,28 @@ void loop() {
  * 
  */
 
+void callback(char *topic, byte *payload, unsigned int length)
+{
+    payload[length] = '\0';
+    std::string msg((char *)payload);
+    if (msg == "open")
+    {
+        open();
+    }
+    else if (msg == "close")
+    {
+        close();
+    }
+    else
+    {
+        // payload invalid
+        return;
+    }
+}
+
 void open()
 {
-    doorState = "opening";
+    client.publish(stateTopic, "opening");
     digitalWrite(motorOpenPin, HIGH);
     digitalWrite(motorClosePin, LOW);
 
@@ -122,12 +161,12 @@ void open()
         }
         continue;
     }
-    doorState = "open";
+    client.publish(stateTopic, "open");
 }
 
 void close()
 {
-    doorState = "closing";
+    client.publish(stateTopic, "closing");
     digitalWrite(motorOpenPin, LOW);
     digitalWrite(motorClosePin, HIGH);
 
@@ -142,7 +181,7 @@ void close()
         }
         continue;
     }
-    doorState = "closed";
+    client.publish(stateTopic, "closed");
 }
 
 void stop()
