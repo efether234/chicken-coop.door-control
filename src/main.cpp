@@ -118,7 +118,7 @@ void loop() {
         if (client.connect("chicken-door_06231333", SECRET_UN, SECRET_PW, availTopic, 0, true, "unavailable"))
     {
         Serial.println("Connected to broker");
-        client.publish(availTopic, "available");
+        client.publish(availTopic, "available", true);
     }
     }
     client.loop();
@@ -165,7 +165,7 @@ void open()
         }
         continue;
     }
-    client.publish(stateTopic, "open");
+    client.publish(stateTopic, "open", true);
 }
 
 void close()
@@ -185,7 +185,7 @@ void close()
         }
         continue;
     }
-    client.publish(stateTopic, "closed");
+    client.publish(stateTopic, "closed", true);
 }
 
 void stop()
