@@ -107,16 +107,20 @@ void setup() {
     server.begin();
 
     client.setServer("192.168.1.104", 1883);
-    if (client.connect("chicken-door_06231333", SECRET_UN, SECRET_PW, availTopic, 0, true, "unavailable"))
-    {
-        Serial.println("Connected to broker");
-        client.publish(availTopic, "available");
-    }
+    
     client.subscribe(ctrlTopic);
     client.setCallback(callback);
 }
 
 void loop() {
+    if (!client.connected())
+    {
+        if (client.connect("chicken-door_06231333", SECRET_UN, SECRET_PW, availTopic, 0, true, "unavailable"))
+    {
+        Serial.println("Connected to broker");
+        client.publish(availTopic, "available");
+    }
+    }
     client.loop();
 }
 
