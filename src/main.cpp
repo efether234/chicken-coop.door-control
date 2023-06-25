@@ -15,7 +15,7 @@
  */
 
 int motorOpenPin = 5;
-int motorClosePin = 0;
+int motorClosePin = 4;
 int sensorOpenPin = 14;
 int sensorClosePin = 13;
 
@@ -29,7 +29,7 @@ Bounce sensorCloseDebouncer;
 
 // Door State
 
-String doorState = "other"; // options: "open", "opening", "closed", "closing"
+// String doorState = "other"; // options: "open", "opening", "closed", "closing"
 
 /*
  * Function Declarations
@@ -107,8 +107,14 @@ void setup() {
     server.begin();
 
     client.setServer("192.168.1.104", 1883);
-    
-    client.subscribe(ctrlTopic);
+
+    if (client.connect("chicken-door_06231333", SECRET_UN, SECRET_PW, availTopic, 0, true, "unavailable"))
+        {
+            Serial.println("Connected to broker");
+            client.publish(availTopic, "available", true);
+            client.subscribe(ctrlTopic);
+        }
+    // client.subscribe(ctrlTopic);
     client.setCallback(callback);
 }
 
@@ -116,12 +122,20 @@ void loop() {
     if (!client.connected())
     {
         if (client.connect("chicken-door_06231333", SECRET_UN, SECRET_PW, availTopic, 0, true, "unavailable"))
-    {
-        Serial.println("Connected to broker");
-        client.publish(availTopic, "available", true);
-    }
+        {
+            Serial.println("Connected to broker");
+            client.publish(availTopic, "available", true);
+            client.subscribe(ctrlTopic);
+        }
+        delay(5000);
     }
     client.loop();
+    delay(500);
+
+    // DEBUG
+
+    // sensorOpenDebouncer.update();
+    // Serial.println(sensorOpenDebouncer.read());
 }
 
 /*
@@ -133,11 +147,14 @@ void callback(char *topic, byte *payload, unsigned int length)
 {
     payload[length] = '\0';
     std::string msg((char *)payload);
-    if (msg == "open")
+    std::string opn("open");
+    std::string cls("close");
+
+    if (msg.compare(opn) == 0)
     {
         open();
     }
-    else if (msg == "close")
+    else if (msg.compare(cls) == 0)
     {
         close();
     }
@@ -158,7 +175,7 @@ void open()
     {
         delay(50);
         sensorOpenDebouncer.update();
-        if (sensorOpenDebouncer.changed())
+        if (sensorOpenDebouncer.read() == 0)
         {
             stop();
             break;
@@ -178,7 +195,7 @@ void close()
     {
         delay(50);
         sensorCloseDebouncer.update();
-        if (sensorCloseDebouncer.changed())
+        if (sensorCloseDebouncer.read() == 0)
         {
             stop();
             break;
