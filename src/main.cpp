@@ -131,11 +131,6 @@ void loop() {
     }
     client.loop();
     delay(500);
-
-    // DEBUG
-
-    // sensorOpenDebouncer.update();
-    // Serial.println(sensorOpenDebouncer.read());
 }
 
 /*
@@ -167,6 +162,7 @@ void callback(char *topic, byte *payload, unsigned int length)
 
 void open()
 {
+    sensorOpenDebouncer.update();
     client.publish(stateTopic, "opening");
     digitalWrite(motorOpenPin, HIGH);
     digitalWrite(motorClosePin, LOW);
@@ -187,6 +183,7 @@ void open()
 
 void close()
 {
+    sensorCloseDebouncer.update();
     client.publish(stateTopic, "closing");
     digitalWrite(motorOpenPin, LOW);
     digitalWrite(motorClosePin, HIGH);
