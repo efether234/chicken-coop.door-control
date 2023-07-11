@@ -15,7 +15,7 @@
  */
 
 int motorOpenPin = 5;
-int motorClosePin = 4;
+int motorClosePin = 0;
 int sensorOpenPin = 14;
 int sensorClosePin = 13;
 
@@ -29,7 +29,7 @@ Bounce sensorCloseDebouncer;
 
 // Door State
 
-// String doorState = "other"; // options: "open", "opening", "closed", "closing"
+std::string doorState = "other"; // options: "open", "opening", "closed", "closing"
 
 /*
  * Function Declarations
@@ -108,7 +108,7 @@ void setup() {
 
     client.setServer("192.168.1.104", 1883);
 
-    if (client.connect("chicken-door_06231333", SECRET_UN, SECRET_PW, availTopic, 0, true, "unavailable"))
+    if (client.connect("chicken-door_061123", SECRET_UN, SECRET_PW, availTopic, 0, true, "unavailable"))
         {
             Serial.println("Connected to broker");
             client.publish(availTopic, "available", true);
@@ -121,7 +121,7 @@ void setup() {
 void loop() {
     if (!client.connected())
     {
-        if (client.connect("chicken-door_06231333", SECRET_UN, SECRET_PW, availTopic, 0, true, "unavailable"))
+        if (client.connect("chicken-door_061123", SECRET_UN, SECRET_PW, availTopic, 0, true, "unavailable"))
         {
             Serial.println("Connected to broker");
             client.publish(availTopic, "available", true);
@@ -162,7 +162,11 @@ void callback(char *topic, byte *payload, unsigned int length)
 
 void open()
 {
-    sensorOpenDebouncer.update();
+    // sensorOpenDebouncer.update();
+    if (doorState == "open")
+    {
+        return;
+    }
     client.publish(stateTopic, "opening");
     digitalWrite(motorOpenPin, HIGH);
     digitalWrite(motorClosePin, LOW);
@@ -174,16 +178,28 @@ void open()
         if (sensorOpenDebouncer.read() == 0)
         {
             stop();
+            doorState = "open";
+            client.publish(stateTopic, "open", true);
+            sensorCloseDebouncer.update();
             break;
         }
         continue;
     }
-    client.publish(stateTopic, "open", true);
+    
+    // delay(9000);
+    // stop();
+    
+    // sensorOpenDebouncer.update();
+    // sensorCloseDebouncer.update();
 }
 
 void close()
 {
-    sensorCloseDebouncer.update();
+    // sensorCloseDebouncer.update();
+    if (doorState == "closed")
+    {
+        return;
+    }
     client.publish(stateTopic, "closing");
     digitalWrite(motorOpenPin, LOW);
     digitalWrite(motorClosePin, HIGH);
@@ -195,11 +211,19 @@ void close()
         if (sensorCloseDebouncer.read() == 0)
         {
             stop();
+            doorState = "closed";
+            client.publish(stateTopic, "closed", true);
+            sensorOpenDebouncer.update();
             break;
         }
         continue;
     }
-    client.publish(stateTopic, "closed", true);
+    
+    // delay(9000);
+    // stop();
+    
+    // sensorCloseDebouncer.update();
+    // sensorOpenDebouncer.update();
 }
 
 void stop()
